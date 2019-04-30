@@ -1,0 +1,28 @@
+#!/bin/bash
+
+if [[ "$( /snap/bin/microk8s.kubectl get pods -l service=ambassador 2>&1 | /bin/grep -c Running )" -eq "0" ]]; then
+    fail-message "Ambassador is not running yet."
+    exit 1
+fi
+
+if [[ "$( /snap/bin/microk8s.kubectl get pods -l app=qotm 2>&1 | /bin/grep -c Running )" -eq "0" ]]; then
+    fail-message "QoTM pod is not running yet."
+    exit 1
+fi
+
+if ! /snap/bin/microk8s.kubectl get svc ambassador 2>&1 >/dev/null; then 
+    fail-message "NodePort service not found. Did you deploy it?"
+    exit 1
+fi
+
+if ! /snap/bin/microk8s.kubectl get svc ambassador-admin 2>&1 >/dev/null; then 
+    fail-message "NodePort service not found. Did you deploy it?"
+    exit 1
+fi
+
+if [[ "$( /usr/bin/curl -fs localhost:30080/qotm/ | /usr/bin/jq -r .ok )" != "true" ]]; then
+    fail-message "QoTM service is not properly registered in Ambassador yet."
+    exit 1
+fi 
+
+exit 0

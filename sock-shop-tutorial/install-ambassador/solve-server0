@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cd /home/demo/ambassador
+kubectl apply -f ambassador-rbac.yaml
+kubectl apply -f ambassador-consul-connector.yaml
+kubectl apply -f ambassador-service.yaml
+kubectl apply -f qotm.yaml

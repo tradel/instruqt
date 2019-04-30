@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd /home/demo/sockshop-helm
+helm install . --name=sockshop \
+    --set zipkin.enabled=false \
+    --set loadtest.enabled=false
+
+kubectl apply -f weaveworks-service.yaml

@@ -1,0 +1,374 @@
+slug: sock-shop-tutorial
+id: ga3xrdivf7h5
+type: track
+title: Sock Shop Tutorial
+teaser: Deploy Consul on Kubernetes with Consul Connect service mesh and Ambassador
+description: |-
+  Build your own version of the world-famous Consul Sock Shop demo!
+
+  Learn how to deploy Consul and Ambassador into a Kubernetes cluster, and use Consul Connect to wire up Ambassador to your microservices for full TLS encryption, mutual authentication, and authorization.
+icon: https://storage.googleapis.com/instruqt-frontend/assets/hashicorp/tracks/consul.png
+tags:
+- consul
+- ' connect'
+- ' ambassador'
+- ' kubernetes'
+owner: hashicorp
+developers:
+- todd@hashicorp.com
+- eveld@hashicorp.com
+private: false
+published: true
+challenges:
+- slug: generate-gossip-key
+  id: tnvlkjait5nh
+  type: challenge
+  title: Generate a Gossip key
+  teaser: Secure traffic between Consul nodes with a Gossip encryption key
+  assignment: |-
+    You now have a fresh Kubernetes cluster to play with. You can verify that Kubernetes is up and running with the usual commands:
+
+        kubectl cluster-info
+        kubectl get nodes
+        kubectl get pods
+
+    ## Generating the key
+    In the shell, generate a key and store it in a temporary variable:
+
+        gossip_key=$(consul keygen)
+
+    You can also inspect the key if you like:
+
+        echo ${gossip_key}
+
+    ## Storing the key in Kubernetes
+    Now, upload the key to Kubernetes as a generic secret:
+
+        kubectl create secret generic consul-gossip-key --from-literal=key=${gossip_key}
+
+    Once the secret is created, click the Check button to make sure everything is working.
+  notes:
+  - type: text
+    contents: In this exercise, you will use Consul to generate a [Gossip encryption
+      key](https://www.consul.io/docs/agent/encryption.html#gossip-encryption). The
+      key is used to encrypt the gossip traffic between Consul nodes. All nodes must
+      be configured with the same exact key.
+  - type: text
+    contents: Once you have the key, you'll store it in Kubernetes as a [secret](https://kubernetes.io/docs/concepts/configuration/secret/).
+      This allows the Helm installer to securely provide the Gossip key to Consul
+      agents in the cluster.
+  - type: text
+    contents: Note that the Helm chart does not enable Gossip encryption by default,
+      but it is recommended as best practice.
+  - type: text
+    contents: |-
+      Hang tight while we create a fresh Kubernetes cluster for you.
+
+      Once the Start button appears in the lower right corner, click the button to begin.
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: server0
+  difficulty: basic
+  timelimit: 600
+- slug: install-consul
+  id: 67cmnyfkosms
+  type: challenge
+  title: Install Consul with the Helm chart
+  teaser: Deploy Consul servers and agents in a single command
+  assignment: "Helm and its server component, Tiller, have already been installed,
+    and the Consul Helm chart is ready for you to use in `/home/demo/consul-helm`.\n\nLike
+    most Helm charts, the Consul chart has many options you can configure. Flip to
+    the File Browser tab and take a look at the `values.yaml` file to see what they
+    are. You can also consult our [Helm chart docs](https://www.consul.io/docs/platform/k8s/helm.html)
+    for a full reference.\n\nWhen you're ready to proceed, use Helm to install Consul.\n\n
+    \   cd /home/demo/consul-helm\n\n    helm install . --name consul \\\n        --set
+    global.image=\"consul:1.4.4\" \\\n        --set global.gossipEncryption.secretName=consul-gossip-key
+    \\\n        --set global.gossipEncryption.secretKey=key \\\n        --set server.replicas=1
+    \\\n        --set server.bootstrapExpect=1 \\\n        --set server.storage=10Gi
+    \\\n        --set client.grpc=true \\\n        --set syncCatalog.enabled=false
+    \\\n        --set connectInject.enabled=true\n\nRather than edit `values.yaml`
+    directly, we are using the command line to override some of the defaults.\n\n
+    \ * We enable Gossip encryption with the key we created in the previous challenge.\n
+    \ * We request that Helm deploy just one server pod, since our cluster only has
+    one host. (The default is 3 pods.)\n  * We enable gRPC, which is required for
+    Consul Connect.\n  * We disable catalog syncing, since Consul Connect will register
+    our services in Consul for us.\n  * Finally, we enable Consul Connect.\n\nIf you
+    make a mistake, no problem. Just uninstall Consul with the following command before
+    you try again.\n\n    helm del --purge consul\n\nNote that the `helm install`
+    command returns before the software is completely deployed. If you want to make
+    sure Consul is up before proceeding to the next step, you can do so like this.\n\n
+    \   kubectl wait --for=condition=Ready pods -l app=consul,component=server\n\nNow
+    we need a way to talk to Consul, since it is inside the cluster, and our shell
+    is outside. \nThe \"Kubernetes way\" of doing that is to create a _NodePort service_,
+    which exposes a Kubernetes service as a port on the host. \nWe have provided a
+    YAML service definition for you. Go ahead and deploy that now.\n\n    kubectl
+    apply -f consul-service.yaml\n\nThe service exposes Consul on port 30085. Once
+    the service is running, you should be able to interact with Consul from the command
+    line or UI.\n\n    export CONSUL_HTTP_ADDR=http://localhost:30085\n    consul
+    members\n\nYou should see two Consul nodes in the output: one server and one client.
+    The Helm chart deploys one client to every host in the cluster using a DaemonSet,
+    and it deploys the number of server pods you specify with **server.replicas**.
+    If you only see the server, wait a minute and try again -- the client is probably
+    still deploying.\n\n**Hint:** The Helm chart tries to ensure that no host in your
+    cluster has more than one Consul server pod on it. Always make sure that **server.replicas**
+    is less than the number of hosts in your cluster, or Consul will fail to start.\n\nOnce
+    you're ready to continue, click Check to check your work."
+  notes:
+  - type: text
+    contents: |-
+      You're now going to use Helm to deploy Consul servers and agents to your cluster.
+
+      Helm is a package manager for Kubernetes, just like `apt` or `rpm` are package managers for Linux.
+  - type: text
+    contents: Helm charts often have lots of options to customize how software is
+      deployed, and Consul is no exception. We'll show you some of the options in
+      this exercise.
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: server0
+  - title: File Browser
+    type: code
+    hostname: server0
+    path: /home/demo/consul-helm
+  - title: Consul UI
+    type: service
+    hostname: server0
+    path: /ui/
+    port: 30085
+  difficulty: basic
+  timelimit: 900
+- slug: install-ambassador
+  id: blnfsyibdzrb
+  type: challenge
+  title: Install Ambassador
+  teaser: Deploy Ambassador proxy and configure it to use Consul for service discovery
+  assignment: "You're now ready to deploy Ambassador to your cluster. But first, using
+    the file browser, take a look at **ambassador-service.yaml**. You'll find a stanza
+    that creates a **ConsulResolver**:\n\n    apiVersion: ambassador/v1\n    kind:
+    ConsulResolver\n    name: consul-dc1\n    address: consul-server.default.svc.cluster.local:8500\n
+    \   datacenter: dc1\n\nThis tells Ambassador to use Consul to resolve service
+    names in Ambassador mappings. When you're ready, deploy Ambassador using the **kubectl**
+    command.\n\n    cd /home/demo/ambassador\n    kubectl apply -f ambassador-rbac.yaml\n
+    \   kubectl apply -f ambassador-consul-connector.yaml\n    kubectl apply -f ambassador-service.yaml\n\nDataWire
+    also provides a handy \"Quote of the Moment\" microservice that you can use to
+    test your configuration. Deploy it now.\n\n    kubectl apply -f qotm.yaml\n\nOnce
+    you have deployed everything, take a look inside the QoTM pod.\n\n    kubectl
+    describe pod -l app=qotm\n\nNotice anything interesting? There are two containers
+    in the pod,\neven though the deployment spec only called for one. The second pod
+    is named **consul-connect-envoy-sidecar**,\nor just the _sidecar_ for short. It
+    was automatically injected into the pod by\nConsul Connect when it saw the following
+    annotation on the pod:\n\n    \"consul.hashicorp.com/connect-inject\": \"true\"\n\nThe
+    sidecar will handle authentication, authorization, and encryption for the QoTM
+    service. \n\nIf you check the Consul UI, you will also see two new services registered,
+    called **qotm** and **qotm-proxy**."
+  notes:
+  - type: text
+    contents: "Now you're ready to deploy [Ambassador](https://www.getambassador.io/).\n\nAmbassador
+      is an edge gateway, ingress controller, and API gateway \ndesigned for Kubernetes.
+      It's based on the same Envoy proxy used by \nConsul Connect, so they work well
+      together."
+  - type: text
+    contents: "DataWire, the company behind Ambassador, has integrated it directly
+      with \nConsul.\n\nThis means Ambassador can use Consul's rich service discovery
+      with \nsupport for multiple datacenters, prepared queries, load balancing, and\nconnecting
+      to services outside Kubernetes."
+  - type: text
+    contents: "In addition, Ambassador can talk to Consul Connect proxies, so you
+      \ncan use Consul's intentions to control traffic and ensure that \ncommunications
+      between Ambassador and your microservices are fully\nsecured and encrypted."
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: server0
+  - title: File Browser
+    type: code
+    hostname: server0
+    path: /home/demo/ambassador
+  - title: Consul UI
+    type: service
+    hostname: server0
+    path: /ui/
+    port: 30085
+  - title: Ambassador Admin
+    type: service
+    hostname: server0
+    path: /ambassador/v0/diag/
+    port: 30087
+  - title: QoTM Service
+    type: service
+    hostname: server0
+    path: /qotm/
+    port: 30080
+  difficulty: basic
+  timelimit: 600
+- slug: deploy-sock-shop
+  id: tc2y7gg49nlr
+  type: challenge
+  title: Deploy the Sock Shop app
+  teaser: Deploy all of the microservices that make up the Sock Shop app
+  assignment: "Now that QoTM is working, let's deploy the entire Sock Shop application.\n\nLike
+    Consul, Sock Shop is packaged as a Helm chart so it's easy to deploy.\nIt even
+    includes a load test script, but since we don't need a load test,\nwe will disable
+    it.\n\n    cd /home/demo/sockshop-helm\n    helm install . --name=sockshop \\\n
+    \       --set zipkin.enabled=false \\\n        --set loadtest.enabled=false\n\nThere
+    is also a service that needs to be registered, including a **Mapping**\nthat allows
+    Ambassador to route traffic to the service.\n\nTake a look at **weaveworks-service.yaml**
+    and you'll see two Mappings.\nThese are the important bits:\n\n    tls: ambassador-consul\n\nThis
+    tells Ambassador to use the TLS certificates it obtained from Consul \nConnect.\n\n
+    \   resolver: consul-dc1\n\nThis tells Ambassador to use Consul for service discovery.
+    \n\n    service: front-end-proxy\n\nThis tells Ambassador that we want to connect
+    the /socks URI to a service\nnamed **front-end-proxy** in Consul. This service
+    was be automatically\nregistered by the Connect injector when it processed the
+    **front-end** pod.\n\nNow that you've become familiar with the service file, let's
+    go ahead and\ndeploy it.\n\n    kubectl apply -f weaveworks-service.yaml\n\nGive
+    everything a minute or two to install and stabilize, then you\nshould be able
+    to flip to the Sock Shop tab and see the site."
+  notes:
+  - type: text
+    contents: Now that we've configured everything properly with the simple QoTM service,
+      let's go ahead with the full Sock Shop deployment.
+  - type: text
+    contents: "Sock Shop is composed of more than a dozen pods: a catalogue service
+      \nand catalogue database, cart service and cart database, orders service \nand
+      orders-db, etc.\n\nThe services have been configured to connect to each other
+      through \nConsul Connect. In most cases, this only required minor changes to
+      \ncommand-line options or environment variables for each pod."
+  - type: text
+    contents: The front-end service is the only one that required [code changes](https://github.com/tradel/front-end/commit/9c32e77828993c4571ac2219843a999e6e4e12cf),
+      as it had some connections hard-coded into it.
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: server0
+  - title: File Browser
+    type: code
+    hostname: server0
+    path: /home/demo/sockshop-helm
+  - title: Consul UI
+    type: service
+    hostname: server0
+    path: /ui/
+    port: 30085
+  - title: Ambassador Admin
+    type: service
+    hostname: server0
+    path: /ambassador/v0/diag/
+    port: 30087
+  - title: Sock Shop
+    type: service
+    hostname: server0
+    path: /socks/
+    port: 30080
+  difficulty: basic
+  timelimit: 900
+- slug: declare-intentions
+  id: xqcxjdmhfswg
+  type: challenge
+  title: Declare your intentions
+  teaser: Use Intentions to declare which services are allowed to connect.
+  assignment: "## Creating intentions\n\nLet's create our default intention in the
+    UI by following these directions:\n  1. Switch to the *Consul UI* tab.\n  2. Click
+    on Intentions. \n  3. Click the Create button.\n  4. For the source and destination,
+    select \"* (All Services)\".\n  5. Make sure the Deny option is selected.\n  6.
+    Click Save.\n\nWe can also create intentions from the command line. Let's do the
+    rest \nthat way. Try each of these commands.\n\n    consul intention create -allow
+    load-test front-end\n    consul intention create -allow front-end carts \n    consul
+    intention create -allow front-end orders\n    consul intention create -allow front-end
+    catalogue\n    consul intention create -allow front-end user \n    consul intention
+    create -allow carts carts-db\n    consul intention create -allow orders orders-db
+    \n    consul intention create -allow catalogue catalogue-db \n    consul intention
+    create -allow user user-db\n    consul intention create -allow queue-master rabbitmq\n
+    \   consul intention create -allow ambassador '*'\n\nThe asterisk in the last
+    command is another wildcard rule. It means\n\"Ambassador is allowed to talk to
+    anything\". The default intention\nyou first created in the UI could also have
+    been expressed as:\n\n    consul intention create -deny '*' '*'\n\n## Checking
+    intentions\n\nYou can also ask Consul to evaluate its intentions and see if a
+    certain\nconnection would be allowed. \n\nIs the Orders service allowed to talk
+    to the Carts database?\n\n    # consul intention check orders carts-db\n    Denied\n\nMakes
+    sense. But the Carts service is allowed to talk to the Carts DB, right?\n\n    #
+    consul intention check carts carts-db\n    Allowed\n\nClick the Check button when
+    you're ready to continue."
+  notes:
+  - type: text
+    contents: |-
+      Now that everything is deployed onto our Kubernetes cluster, it's time to declare our _intentions._
+
+      Intentions are the rules you create in Consul to declare which services are allowed to talk to each other.
+  - type: text
+    contents: |-
+      Up until now, we have not declared any intentions, but all of our tests have worked anyway. Why?
+
+      By default, Consul allows every connection to proceed.
+
+      The first intention we create will be a _wildcard intention_ that denies all traffic except the connections we explicitly allow.
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: server0
+  - title: Consul UI
+    type: service
+    hostname: server0
+    path: /ui/
+    port: 30085
+  - title: Ambassador Admin
+    type: service
+    hostname: server0
+    path: /ambassador/v0/diag/
+    port: 30087
+  - title: Sock Shop
+    type: service
+    hostname: server0
+    path: /socks/
+    port: 30080
+  difficulty: basic
+  timelimit: 600
+- slug: sandbox
+  id: segxpfmcjxcz
+  type: challenge
+  title: Sandbox
+  teaser: Take some time to explore your fully functional cluster
+  assignment: |
+    Now that you've got everything deployed, you can explore as much as you like.
+
+    Here's a fun experiment to try: flip one of the intentions you created in the previous challenge and then reload the Sock Shop tab. For example:
+
+        consul intention create -replace -deny ambassador front-end
+
+    Notice how the page now gives a 502 error? The new intention took effect with the very next socket connection.
+  notes:
+  - type: text
+    contents: We'll leave this demo environment up for a few minutes. Feel free to
+      poke around.
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: server0
+  - title: File Browser
+    type: code
+    hostname: server0
+    path: /home/demo
+  - title: Consul UI
+    type: service
+    hostname: server0
+    path: /ui/
+    port: 30085
+  - title: Ambassador Admin
+    type: service
+    hostname: server0
+    path: /ambassador/v0/diag/
+    port: 30087
+  - title: QoTM Service
+    type: service
+    hostname: server0
+    path: /qotm/
+    port: 30080
+  - title: Sock Shop
+    type: service
+    hostname: server0
+    path: /socks/
+    port: 30080
+  difficulty: basic
+  timelimit: 1800
+checksum: "4436072113006596636"

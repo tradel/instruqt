@@ -1,0 +1,15 @@
+#!/bin/bash
+
+cd /home/demo/consul-helm
+helm install . --name consul \
+    --set global.image="consul:1.4.4" \
+    --set global.gossipEncryption.secretName=consul-gossip-key \
+    --set global.gossipEncryption.secretKey=key \
+    --set server.replicas=1 \
+    --set server.bootstrapExpect=1 \
+    --set server.storage=10Gi \
+    --set client.grpc=true \
+    --set syncCatalog.enabled=false \
+    --set connectInject.enabled=true
+
+kubectl apply -f consul-service.yaml

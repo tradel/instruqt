@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [[ "$( /snap/bin/microk8s.kubectl get pods -l app=consul,component=server 2>&1 | /bin/grep -c Running )" -eq "0" ]]; then
+    fail-message "Consul server is not alive yet."
+    exit 1
+fi
+
+if [[ "$( /snap/bin/microk8s.kubectl get pods -l app=consul,component=client 2>&1 | /bin/grep -c Running )" -eq "0" ]]; then
+    fail-message "Consul agent is not alive yet."
+    exit 1
+fi
+
+if ! /snap/bin/microk8s.kubectl get svc consul-nodeport 2>&1 >/dev/null; then 
+    fail-message "NodePort service not found. Did you deploy it?"
+    exit 1
+fi
+
+export CONSUL_HTTP_ADDR=http://localhost:30085
+
+if [[ "$( /usr/local/bin/consul members | /bin/grep -c server0.*alive )" -ne "1" ]]; then
+    fail-message "Consul agent hasn't registered yet. Wait a minute and try again."
+    exit 1
+fi
+
+exit 0

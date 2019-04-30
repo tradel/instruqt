@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ "$( /snap/bin/helm ls sockshop | /bin/grep -c DEPLOYED )" -eq "0" ]]; then
+    fail-message "Sock Shop has not been deployed with Helm yet."
+    exit 1
+fi
+
+if ! /snap/bin/microk8s.kubectl get service front-end-nodeport 2>&1 >/dev/null; then
+    fail-message "Front-end service has not been deployed yet."
+    exit 1
+fi
+
+exit 0

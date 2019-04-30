@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export CONSUL_HTTP_ADDR=localhost:30085 
+
+if [[ "$( /usr/local/bin/consul intention check '*' '*' )" != "Denied" ]]; then
+    fail-message "Default intention has not been created. Try again."
+    exit 1
+fi
+
+if [[ "$( /usr/local/bin/consul intention check 'orders' 'orders-db' )" != "Allowed" ]]; then
+    fail-message "Intentions are missing. Try again."
+    exit 1
+fi
+
+exit 0

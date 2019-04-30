@@ -1,0 +1,14 @@
+#!/bin/bash
+
+consul intention create -allow load-test front-end
+consul intention create -allow front-end carts 
+consul intention create -allow front-end orders
+consul intention create -allow front-end catalogue
+consul intention create -allow front-end user 
+consul intention create -allow carts carts-db
+consul intention create -allow orders orders-db 
+consul intention create -allow catalogue catalogue-db 
+consul intention create -allow user user-db
+consul intention create -allow queue-master rabbitmq
+consul intention create -allow ambassador '*'
+consul intention create -deny '*' '*'

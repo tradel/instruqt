@@ -1,0 +1,4 @@
+#!/bin/bash
+
+set-workdir /home/demo/sockshop-helm
+rm -f /home/demo/sockshop-helm/requirements.yaml 

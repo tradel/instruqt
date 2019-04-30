@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if ! /snap/bin/microk8s.kubectl get secret consul-gossip-key > /dev/null; then
+    fail-message "The secret has not been created in Kubernetes yet."
+    exit 1
+fi
+
+exit 0

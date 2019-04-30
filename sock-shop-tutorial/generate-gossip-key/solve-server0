@@ -1,0 +1,4 @@
+#!/bin/bash
+
+gossip_key=$(consul keygen)
+kubectl create secret generic consul-gossip-key --from-literal=key=${gossip_key}

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+/bin/systemctl stop nginx
+
+/snap/bin/microk8s.start
+/snap/bin/microk8s.status --wait-ready
+/snap/bin/microk8s.kubectl get nodes -o name | /bin/grep packer | /usr/bin/xargs kubectl delete
+
+/sbin/iptables -P FORWARD ACCEPT
+/sbin/iptables -L FORWARD
+
+/snap/bin/microk8s.enable dns storage
+/snap/bin/microk8s.kubectl -n kube-system wait --for=condition=Ready pods -l k8s-app=kube-dns
+/snap/bin/microk8s.kubectl -n kube-system wait --for=condition=Ready pods -l k8s-app=hostpath-provisioner
+
+/snap/bin/helm init --service-account tiller
+/snap/bin/microk8s.kubectl -n kube-system wait --for=condition=Ready pods -l app=helm,name=tiller
+
+mkdir -p $HOME/.kube
+/snap/bin/microk8s.config > $HOME/.kube/config 
+
